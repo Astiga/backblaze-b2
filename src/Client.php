@@ -281,8 +281,8 @@ class Client
         $nextFileName = null;
         $maxFileCount = 1000;
 
-        $prefix = isset($options["Prefix"]) ? $options["Prefix"] : "";
-        $delimiter = isset($options["Delimiter"]) ? $options["Delimiter"] : null;
+        $prefix = isset($options['Prefix']) ? $options['Prefix'] : '';
+        $delimiter = isset($options['Delimiter']) ? $options['Delimiter'] : null;
 
         $files = [];
 
