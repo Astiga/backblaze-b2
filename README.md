@@ -1,3 +1,8 @@
+**Changes from the original:**
+
+* Add prefix option
+* Switch to V2 API to support application keys (only tested for _download_ and _list_files_) 
+
 ## Backblaze B2 for PHP
 
 [![Author](http://img.shields.io/badge/author-@mhetreramesh-blue.svg?style=flat-square)](https://twitter.com/mhetreramesh)

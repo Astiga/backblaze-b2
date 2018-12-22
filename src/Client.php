@@ -15,6 +15,8 @@ class Client
     protected $apiUrl;
     protected $downloadUrl;
 
+    protected $bucket;
+
     protected $client;
 
     /**
@@ -23,8 +25,10 @@ class Client
      * @param $accountId
      * @param $applicationKey
      * @param array $options
+     * @param string $userAgent
+     * @throws \Exception
      */
-    public function __construct($accountId, $applicationKey, array $options = [])
+    public function __construct($accountId, $applicationKey, array $options = [], $userAgent = "koenvh1\\backblaze-b2/1.0")
     {
         $this->accountId = $accountId;
         $this->applicationKey = $applicationKey;
@@ -32,7 +36,9 @@ class Client
         if (isset($options['client'])) {
             $this->client = $options['client'];
         } else {
-            $this->client = new HttpClient(['exceptions' => false]);
+            $this->client = new HttpClient(['exceptions' => false, 'headers' => [
+                'User-Agent' => $userAgent
+            ]]);
         }
 
         $this->authorizeAccount();
@@ -107,19 +113,23 @@ class Client
     /**
      * Returns a list of bucket objects representing the buckets on the account.
      *
+     * @param null $bucketId BucketID, required if application key is used
      * @return array
      */
-    public function listBuckets()
+    public function listBuckets($bucketId = null)
     {
         $buckets = [];
+
+        $jsonData = [
+            'accountId' => $this->accountId,
+        ];
+        if ($bucketId) $jsonData['bucketId'] = $bucketId;
 
         $response = $this->client->request('POST', $this->apiUrl.'/b2_list_buckets', [
             'headers' => [
                 'Authorization' => $this->authToken,
             ],
-            'json' => [
-                'accountId' => $this->accountId,
-            ],
+            'json' => $jsonData,
         ]);
 
         foreach ($response['buckets'] as $bucket) {
@@ -250,9 +260,10 @@ class Client
             'sink' => isset($options['SaveAs']) ? $options['SaveAs'] : null,
         ];
 
+
         if (isset($options['FileId'])) {
             $requestOptions['query'] = ['fileId' => $options['FileId']];
-            $requestUrl = $this->downloadUrl.'/b2api/v1/b2_download_file_by_id';
+            $requestUrl = $this->downloadUrl.'/b2api/v2/b2_download_file_by_id';
         } else {
             if (!isset($options['BucketName']) && isset($options['BucketId'])) {
                 $options['BucketName'] = $this->getBucketNameFromId($options['BucketId']);
@@ -313,7 +324,7 @@ class Client
             foreach ($response['files'] as $file) {
                 // if we have a file name set, only retrieve information if the file name matches
                 if (!$fileName || ($fileName === $file['fileName'])) {
-                    $files[] = new File($file['fileId'], $file['fileName'], null, $file['size']);
+                    $files[] = new File($file['fileId'], $file['fileName'], null, $file['contentLength']);
                 }
             }
 
@@ -424,13 +435,16 @@ class Client
      */
     protected function authorizeAccount()
     {
-        $response = $this->client->request('GET', 'https://api.backblazeb2.com/b2api/v1/b2_authorize_account', [
+        $response = $this->client->request('GET', 'https://api.backblazeb2.com/b2api/v2/b2_authorize_account', [
             'auth' => [$this->accountId, $this->applicationKey],
         ]);
 
         $this->authToken = $response['authorizationToken'];
-        $this->apiUrl = $response['apiUrl'].'/b2api/v1';
+        $this->apiUrl = $response['apiUrl'].'/b2api/v2';
         $this->downloadUrl = $response['downloadUrl'];
+        if (isset($response['allowed'])) {
+            $this->bucket = $response['allowed'];
+        }
     }
 
     /**
@@ -460,7 +474,11 @@ class Client
      */
     protected function getBucketNameFromId($id)
     {
-        $buckets = $this->listBuckets();
+        if (isset($this->bucket['bucketId']) && $this->bucket['bucketId'] == $id) {
+            return $this->bucket['bucketName'];
+        }
+
+        $buckets = $this->listBuckets($id);
 
         foreach ($buckets as $bucket) {
             if ($bucket->getId() === $id) {

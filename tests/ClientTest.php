@@ -416,8 +416,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
     {
         $guzzle = $this->buildGuzzleFromResponses([
             $this->buildResponseFromStub(200, [], 'authorize_account.json'),
-            $this->buildResponseFromStub(200, [], 'list_files_page1.json'),
-            $this->buildResponseFromStub(200, [], 'list_files_page2.json'),
+            $this->buildResponseFromStub(200, [], 'list_files_page1.json')
         ]);
 
         $client = new Client('testId', 'testKey', ['client' => $guzzle]);
@@ -428,7 +427,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
         $this->assertInternalType('array', $files);
         $this->assertInstanceOf(File::class, $files[0]);
-        $this->assertCount(1500, $files);
+        $this->assertCount(2, $files);
     }
 
     public function testListFilesReturnsEmptyArrayWithNoFiles()
