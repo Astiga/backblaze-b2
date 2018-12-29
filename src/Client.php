@@ -324,7 +324,7 @@ class Client
             foreach ($response['files'] as $file) {
                 // if we have a file name set, only retrieve information if the file name matches
                 if (!$fileName || ($fileName === $file['fileName'])) {
-                    $files[] = new File($file['fileId'], $file['fileName'], null, $file['contentLength']);
+                    $files[] = new File($file['fileId'], $file['fileName'], $file["contentSha1"], $file['contentLength']);
                 }
             }
 
