@@ -13,8 +13,10 @@ use BackblazeB2\Exceptions\ValidationException;
 use BackblazeB2\File;
 use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Stream;
+use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 
-class ClientTest extends \PHPUnit_Framework_TestCase
+class ClientTest extends TestCase
 {
     use TestHelper;
 
@@ -32,6 +34,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
             'BucketName' => 'Test bucket',
             'BucketType' => Bucket::TYPE_PUBLIC,
         ]);
+
         $this->assertInstanceOf(Bucket::class, $bucket);
         $this->assertEquals('Test bucket', $bucket->getName());
         $this->assertEquals(Bucket::TYPE_PUBLIC, $bucket->getType());
@@ -58,7 +61,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     public function testBucketAlreadyExistsExceptionThrown()
     {
-        $this->setExpectedException(BucketAlreadyExistsException::class);
+        $this->expectException(BucketAlreadyExistsException::class);
 
         $guzzle = $this->buildGuzzleFromResponses([
             $this->buildResponseFromStub(200, [], 'authorize_account.json'),
@@ -74,7 +77,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     public function testInvalidBucketTypeThrowsException()
     {
-        $this->setExpectedException(ValidationException::class);
+        $this->expectException(ValidationException::class);
 
         $guzzle = $this->buildGuzzleFromResponses([
             $this->buildResponseFromStub(200, [], 'authorize_account.json'),
@@ -135,7 +138,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         $client = new Client('testId', 'testKey', ['client' => $guzzle]);
 
         $buckets = $client->listBuckets();
-        $this->assertInternalType('array', $buckets);
+        $this->assertIsArray($buckets);
         $this->assertCount(3, $buckets);
         $this->assertInstanceOf(Bucket::class, $buckets[0]);
     }
@@ -150,7 +153,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         $client = new Client('testId', 'testKey', ['client' => $guzzle]);
 
         $buckets = $client->listBuckets();
-        $this->assertInternalType('array', $buckets);
+        $this->assertIsArray($buckets);
         $this->assertCount(0, $buckets);
     }
 
@@ -170,7 +173,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     public function testBadJsonThrownDeletingNonExistentBucket()
     {
-        $this->setExpectedException(BadJsonException::class);
+        $this->expectException(BadJsonException::class);
 
         $guzzle = $this->buildGuzzleFromResponses([
             $this->buildResponseFromStub(200, [], 'authorize_account.json'),
@@ -186,7 +189,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     public function testBucketNotEmptyThrownDeletingNonEmptyBucket()
     {
-        $this->setExpectedException(BucketNotEmptyException::class);
+        $this->expectException(BucketNotEmptyException::class);
 
         $guzzle = $this->buildGuzzleFromResponses([
             $this->buildResponseFromStub(200, [], 'authorize_account.json'),
@@ -228,13 +231,16 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
         // We'll also check the Guzzle history to make sure the upload request got created correctly.
         $uploadRequest = $container[2]['request'];
-        $this->assertEquals('uploadUrl', $uploadRequest->getRequestTarget());
-        $this->assertEquals('authToken', $uploadRequest->getHeader('Authorization')[0]);
-        $this->assertEquals(strlen($content), $uploadRequest->getHeader('Content-Length')[0]);
-        $this->assertEquals('test.txt', $uploadRequest->getHeader('X-Bz-File-Name')[0]);
-        $this->assertEquals(sha1($content), $uploadRequest->getHeader('X-Bz-Content-Sha1')[0]);
-        $this->assertEquals(round(microtime(true) * 1000),
-            $uploadRequest->getHeader('X-Bz-Info-src_last_modified_millis')[0], '', 100);
+        $this->assertEqualsWithDelta('uploadUrl', $uploadRequest->getRequestTarget(), 0);
+        $this->assertEqualsWithDelta('authToken', $uploadRequest->getHeader('Authorization')[0], 0);
+        $this->assertEqualsWithDelta(strlen($content), $uploadRequest->getHeader('Content-Length')[0], 0);
+        $this->assertEqualsWithDelta('test.txt', $uploadRequest->getHeader('X-Bz-File-Name')[0], 0);
+        $this->assertEqualsWithDelta(sha1($content), $uploadRequest->getHeader('X-Bz-Content-Sha1')[0], 0);
+        $this->assertEqualsWithDelta(
+            round(microtime(true) * 1000),
+            $uploadRequest->getHeader('X-Bz-Info-src_last_modified_millis')[0],
+            100
+        );
         $this->assertInstanceOf(Stream::class, $uploadRequest->getBody());
     }
 
@@ -262,13 +268,16 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
         // We'll also check the Guzzle history to make sure the upload request got created correctly.
         $uploadRequest = $container[2]['request'];
-        $this->assertEquals('uploadUrl', $uploadRequest->getRequestTarget());
-        $this->assertEquals('authToken', $uploadRequest->getHeader('Authorization')[0]);
-        $this->assertEquals(strlen($content), $uploadRequest->getHeader('Content-Length')[0]);
-        $this->assertEquals('test.txt', $uploadRequest->getHeader('X-Bz-File-Name')[0]);
-        $this->assertEquals(sha1($content), $uploadRequest->getHeader('X-Bz-Content-Sha1')[0]);
-        $this->assertEquals(round(microtime(true) * 1000),
-            $uploadRequest->getHeader('X-Bz-Info-src_last_modified_millis')[0], '', 100);
+        $this->assertEqualsWithDelta('uploadUrl', $uploadRequest->getRequestTarget(), 0.0);
+        $this->assertEqualsWithDelta('authToken', $uploadRequest->getHeader('Authorization')[0], 0.0);
+        $this->assertEqualsWithDelta(strlen($content), $uploadRequest->getHeader('Content-Length')[0], 0.0);
+        $this->assertEqualsWithDelta('test.txt', $uploadRequest->getHeader('X-Bz-File-Name')[0], 0.0);
+        $this->assertEqualsWithDelta(sha1($content), $uploadRequest->getHeader('X-Bz-Content-Sha1')[0], 0.0);
+        $this->assertEqualsWithDelta(
+            round(microtime(true) * 1000),
+            $uploadRequest->getHeader('X-Bz-Info-src_last_modified_millis')[0],
+            100
+        );
         $this->assertInstanceOf(Stream::class, $uploadRequest->getBody());
     }
 
@@ -303,6 +312,48 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($lastModified, $uploadRequest->getHeader('X-Bz-Info-src_last_modified_millis')[0]);
         $this->assertEquals($contentType, $uploadRequest->getHeader('Content-Type')[0]);
         $this->assertInstanceOf(Stream::class, $uploadRequest->getBody());
+    }
+
+    public function testDownloadUrl()
+    {
+        $authorizeAccountString = file_get_contents(dirname(__FILE__).'/responses/authorize_account.json');
+        $authorizeAccount = json_decode($authorizeAccountString);
+        $expectedFileContents = 'foo';
+        $uriResponses = [
+            'https://api.backblazeb2.com/b2api/v1//b2_authorize_account'      => $authorizeAccountString,
+            $authorizeAccount->downloadUrl.'/b2api/v1/b2_download_file_by_id' => $expectedFileContents,
+        ];
+
+        $clientMock = $this->getMockBuilder(\BackblazeB2\Http\Client::class)->getMock();
+        $mockGuzzleRequest = function ($method, $uri = null, array $options = [], $asJson = true) use ($uriResponses) {
+            if (isset($options['headers']) && array_key_exists('Authorization', $options['headers'])) {
+                //If header is present, it must not be empty
+                $this->assertNotEmpty($options['headers']['Authorization'], sprintf('No authorization for uri %s', $uri));
+            }
+
+            if (isset($uriResponses[$uri])) {
+                $response = new \GuzzleHttp\Psr7\Response(200, [], $uriResponses[$uri]);
+            } else {
+                $response = new \GuzzleHttp\Psr7\Response(404, [], null);
+            }
+
+            if ($asJson) {
+                return json_decode($response->getBody(), true);
+            }
+
+            return $response->getBody()->getContents();
+        };
+
+        $clientMock->expects($this->any())
+            ->method('guzzleRequest')
+            ->will($this->returnCallback($mockGuzzleRequest));
+
+        $client = new Client('testId', 'testKey', ['client' => $clientMock]);
+        $actualFileContents = $client->download([
+            'FileId' => 'fileId',
+        ]);
+
+        $this->assertSame($expectedFileContents, $actualFileContents);
     }
 
     public function testDownloadByIdWithoutSavePath()
@@ -343,7 +394,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     public function testDownloadingByIncorrectIdThrowsException()
     {
-        $this->setExpectedException(BadValueException::class);
+        $this->expectException(BadValueException::class);
 
         $guzzle = $this->buildGuzzleFromResponses([
             $this->buildResponseFromStub(200, [], 'authorize_account.json'),
@@ -397,7 +448,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     public function testDownloadingByIncorrectPathThrowsException()
     {
-        $this->setExpectedException(NotFoundException::class);
+        $this->expectException(NotFoundException::class);
 
         $guzzle = $this->buildGuzzleFromResponses([
             $this->buildResponseFromStub(200, [], 'authorize_account.json'),
@@ -426,7 +477,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
             'BucketId' => 'bucketId',
         ]);
 
-        $this->assertInternalType('array', $files);
+        $this->assertIsArray($files);
         $this->assertInstanceOf(File::class, $files[0]);
         $this->assertCount(1500, $files);
     }
@@ -444,7 +495,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
             'BucketId' => 'bucketId',
         ]);
 
-        $this->assertInternalType('array', $files);
+        $this->assertIsArray($files);
         $this->assertCount(0, $files);
     }
 
@@ -466,7 +517,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     public function testGettingNonExistentFileThrowsException()
     {
-        $this->setExpectedException(BadJsonException::class);
+        $this->expectException(BadJsonException::class);
 
         $guzzle = $this->buildGuzzleFromResponses([
             $this->buildResponseFromStub(200, [], 'authorize_account.json'),
@@ -478,6 +529,26 @@ class ClientTest extends \PHPUnit_Framework_TestCase
         $client->getFile([
             'FileId' => 'fileId',
         ]);
+    }
+
+    public function testCopyFile()
+    {
+        $guzzle = $this->buildGuzzleFromResponses([
+            $this->buildResponseFromStub(200, [], 'authorize_account.json'),
+            $this->buildResponseFromStub(200, [], 'list_files_page1.json'),
+            $this->buildResponseFromStub(200, [], 'copy_file.json'),
+        ]);
+
+        $client = new Client('testId', 'testKey', ['client' => $guzzle]);
+
+        $actual = $client->copy([
+            'BucketId' => 'sourceBucketId',
+            'FileName' => 'sourceFileName',
+            'SaveAs'   => 'destinationFileName',
+        ]);
+
+        $this->assertInstanceOf('BackblazeB2\File', $actual);
+        $this->assertEquals('4_z4c2b953461da9c825f260e1b_f1114dbf5bg9707e8_d20160206_m012226_c001_v1111017_t0010', $actual->getId());
     }
 
     public function testDeleteFile()
@@ -512,7 +583,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     public function testDeletingNonExistentFileThrowsException()
     {
-        $this->setExpectedException(BadJsonException::class);
+        $this->expectException(BadJsonException::class);
 
         $guzzle = $this->buildGuzzleFromResponses([
             $this->buildResponseFromStub(200, [], 'authorize_account.json'),
@@ -521,9 +592,42 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
         $client = new Client('testId', 'testKey', ['client' => $guzzle]);
 
-        $this->assertTrue($client->deleteFile([
+        $client->deleteFile([
             'FileId'   => 'fileId',
             'FileName' => 'fileName',
-        ]));
+        ]);
+    }
+
+    public function testAuthenticationTimeout()
+    {
+        $reflectionClass = new ReflectionClass('BackblazeB2\Client');
+        $reflectionProperty = $reflectionClass->getProperty('reAuthTime');
+        $reflectionProperty->setAccessible(true);
+
+        $guzzle = $this->buildGuzzleFromResponses([
+            $this->buildResponseFromStub(200, [], 'authorize_account.json'),
+            $this->buildResponseFromStub(200, [], 'create_bucket_public.json'),
+        ]);
+
+        $client = new Client(
+            'testId',
+            'testKey',
+            [
+                'client'               => $guzzle,
+                'auth_timeout_seconds' => 2,
+            ]
+        );
+
+        $curTime = $reflectionProperty->getValue($client);
+        sleep(5);  // let the token timeout
+
+        // Something that will reaturhorize
+        $bucket = $client->createBucket([
+            'BucketName' => 'Test bucket',
+            'BucketType' => Bucket::TYPE_PUBLIC,
+        ]);
+
+        $newTime = $reflectionProperty->getValue($client);
+        $this->assertTrue($curTime->timestamp != $newTime->timestamp);
     }
 }

@@ -24,8 +24,12 @@ $ composer require gliterd/backblaze-b2
 use BackblazeB2\Client;
 use BackblazeB2\Bucket;
 
-$client = new Client('accountId', 'applicationKey');
+$options = ['auth_timeout_seconds' => seconds];
+
+$client = new Client('accountId', 'applicationKey', $options);
 ```
+_$options_ is optional. If omitted, the default timeout is 12 hours. The timeout allows for a long lived Client object
+so that the authorization token does not expire.
 ## *ApplicationKey is not supported yet, please use MasterKey only*
 
 #### Returns a bucket details
@@ -78,6 +82,18 @@ $fileContent = $client->download([
 
     // Can also save directly to a location on disk. This will cause download() to not return file content.
     // 'SaveAs' => '/path/to/save/location'
+]);
+```
+
+#### File Copy
+``` php
+$copyOfFile = $client->copy([
+    'BucketName' => $bucketName,
+    'FileName'   => $path,
+    'SaveAs'     => $newPath,
+
+    // Can also supply BucketId instead of BucketName
+    // Optional are DestinationBucketName or DestinationBucketId
 ]);
 ```
 
