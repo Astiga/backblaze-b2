@@ -1,9 +1,9 @@
 {
-    "name": "koenvh1/backblaze-b2",
+    "name": "astiga/backblaze-b2",
     "type": "library",
     "description": "PHP SDK for working with backblaze B2 cloud storage.",
     "keywords": ["cloud-storage", "b2", "storage", "backblaze", "cloud", "filesystem", "backup"],
-    "homepage": "https://github.com/Koenvh1/b2-sdk-php",
+    "homepage": "https://github.com/Astiga/b2-sdk-php",
     "license": "MIT",
     "authors": [
         {
